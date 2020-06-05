@@ -1,0 +1,20 @@
+{
+  "name": "messages-server",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node src/server2.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "Ofek Bashan",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "tedis": "^0.1.12",
+    "uuid": "^8.1.0"
+  }
+}
