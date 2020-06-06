@@ -1,16 +1,29 @@
 const redisClient = require("./redis");
 const { v4: uuidv4 } = require('uuid');
+const { ValidationError } = require('./errors');
 
 const MESSAGE_CHECK_INTERVAL = 1000;
 const MESAGGES_KEY = "messages";
 const MESSAGE_LOCK_PREFIX = "message_lock:";
 
 const addMessage = async (time, message) => {
+    verifyMessageParameters(time, message);
     const id = uuidv4();
     time = +time;
     const item = JSON.stringify({ id, message });
     await redisClient.zadd(MESAGGES_KEY, { [item]: time});
 };
+
+const verifyMessageParameters = (time, message) => {
+    if (!message || typeof message !== "string") {
+        throw new ValidationError("Parameter message should be provided, and be a non empty string");
+    }
+
+    const currentTime = new Date().getTime();
+    if (!time || !Number.isInteger(+time) || +time < currentTime)  {
+        throw new ValidationError("Parameter time should provided, and represent a time in the future (in epoch time format)");
+    }
+}
 
 const startMessageChecking = () => {
     setInterval(checkMessages, MESSAGE_CHECK_INTERVAL);
