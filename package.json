@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "start": "node src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
     "express": "^4.17.1",
     "tedis": "^0.1.12",
     "uuid": "^8.1.0"
+  },
+  "devDependencies": {
+    "jest": "^26.0.1"
   }
 }
