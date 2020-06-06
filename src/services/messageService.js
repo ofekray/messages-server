@@ -102,5 +102,6 @@ const getLockExpiration = (lockName) => {
 
 module.exports = {
     addMessage,
+    checkMessages,
     startMessageChecking
 };

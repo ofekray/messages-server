@@ -1,4 +1,5 @@
 const { ValidationError } = require('../../src/services/errors');
+const { sleep } = require("../testUtils");
 
 let mockCache = {};
 let mockExpirationTimes = {};
@@ -153,5 +154,42 @@ describe("testing addMessage", () => {
         expect(mockCache["messages"]).toHaveLength(1);
         expect(mockCache["messages"][0].jsonMessage).toBe(JSON.stringify({ id, message }));
         expect(mockCache["messages"][0].time).toBe(time);
+    });
+});
+
+describe("testing checkMessages", () => {
+    test('prints message when time passed', async() => {
+        // Setup
+        const message = "This is a valid message";
+        const time = new Date().getTime() - 1;
+        mockCache["messages"] = [{ jsonMessage: JSON.stringify({ id: mockId++, message }), time }];
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+
+        // Run
+        await messagesService.checkMessages();
+
+        // Test
+        expect(console.log).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenLastCalledWith(message);
+
+        // Clean
+        spy.mockRestore();
+    });
+
+    test('doesn`t prints message when time is in the future', async() => {
+        // Setup
+        const message = "This is a valid message";
+        const time = new Date().getTime() + (3 * 60 * 1000);
+        mockCache["messages"] = [{ jsonMessage: JSON.stringify({ id: mockId++, message }), time }];
+        const spy = jest.spyOn(console, 'log').mockImplementation();
+
+        // Run
+        await messagesService.checkMessages();
+
+        // Test
+        expect(console.log).toHaveBeenCalledTimes(0);
+
+        // Clean
+        spy.mockRestore();
     });
 });
