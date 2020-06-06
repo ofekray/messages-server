@@ -2,7 +2,10 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const { registerRoutes } = require("./routing");
 
-const port = 3000;
+const DEFAULT_PORT = 3000;
+const PORT_ENV_VAR = "SERVER_PORT";
+
+const port = process.env[PORT_ENV_VAR] ? +process.env[PORT_ENV_VAR] : DEFAULT_PORT;
 const app = express();
 
 app.use(bodyParser.json());

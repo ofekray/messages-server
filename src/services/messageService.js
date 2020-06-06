@@ -1,6 +1,7 @@
 const redisClient = require("./redis");
 const { v4: uuidv4 } = require('uuid');
 
+const MESSAGE_CHECK_INTERVAL = 1000;
 const MESAGGES_KEY = "messages";
 const MESSAGE_LOCK_PREFIX = "message_lock:";
 
@@ -12,7 +13,7 @@ const addMessage = async (time, message) => {
 };
 
 const startMessageChecking = () => {
-    setInterval(checkMessages, 1000);
+    setInterval(checkMessages, MESSAGE_CHECK_INTERVAL);
 }
 
 const checkMessages = async() => {
