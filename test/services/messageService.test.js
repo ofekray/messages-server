@@ -1,7 +1,57 @@
-const { mockRedis, resetRedisMock } = require("../testUtils");
 const { ValidationError } = require('../../src/services/errors');
 
-jest.mock('../../src/services/redis', () => mockRedis);
+let mockCache = {};
+let mockExpirationTimes = {};
+jest.mock('../../src/services/redis', () => {
+    return {
+        async zadd(key, item) {
+            const jsonMessage = Object.keys(item)[0];
+            const time = item[jsonMessage];
+            if (mockCache[key]) {
+                mockCache[key].push({ jsonMessage, time });
+            }
+            else {
+                mockCache[key] = [{ jsonMessage, time }];
+            }
+        },
+        async zrange(key) {
+            if (mockCache[key] &&  mockCache[key].length > 0) {
+                const sortedSet = mockCache[key].sort((a, b) => a.time - b.time);
+                const { jsonMessage, time } = sortedSet[0];
+                return {
+                    [jsonMessage]: time
+                }
+            }
+            else {
+                return {};
+    
+            }
+        },
+        async zrem(key, jsonMessage) {
+            if (mockCache[key]) {
+                mockCache[key] = mockCache[key].filter(x => x.jsonMessage !== jsonMessage);
+            }
+        },
+        async setnx(key, value) {
+            if (mockCache[key]) {
+                return 0;
+            }
+            else {
+                mockCache[key] = value;
+                return 1;
+            }
+        },
+        async del(key) {
+            delete mockCache[key];
+        },
+        async expire(key, ttl) {
+            mockExpirationTimes[key] = ttl;
+        },
+        async ttl(key) {
+            return mockExpirationTimes[key];
+        }
+    };
+});
 
 let mockId = 0;
 jest.mock('uuid', () => {
@@ -12,9 +62,10 @@ jest.mock('uuid', () => {
 
 const messagesService = require("../../src/services/messageService");
 
-beforeEach(async() => {
-    resetRedisMock();
+afterEach(async() => {
     idCounter = 0;
+    mockCache = {};
+    mockExpirationTimes = {};
 });
 
 describe("testing addMessage", () => {
@@ -71,15 +122,36 @@ describe("testing addMessage", () => {
     });
 
     test('throws ValidationError when time already passed', async() => {
+        // Setup
         let error;
+
+        // Run
         try {
             await messagesService.addMessage(new Date().getTime() - 1, "valid message");
         }
         catch(err) {
             error = err;
         }
+
+        // Test
         expect(error).toBeDefined();
         expect(error).toBeInstanceOf(ValidationError);
         expect(error.message.startsWith("Parameter time")).toBe(true);
+    });
+
+    test('valid parameters', async() => {
+        // Setup
+        const message = "This is a valid message";
+        const time = new Date().getTime() + (3 * 60 * 1000);
+        const id = "very-random-id-0";
+
+        // Run
+        await messagesService.addMessage(time, message);
+
+        // Test
+        expect(mockCache["messages"]).toBeDefined();
+        expect(mockCache["messages"]).toHaveLength(1);
+        expect(mockCache["messages"][0].jsonMessage).toBe(JSON.stringify({ id, message }));
+        expect(mockCache["messages"][0].time).toBe(time);
     });
 });
