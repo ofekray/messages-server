@@ -8,6 +8,8 @@ const MESSAGE_LOCK_PREFIX = "message_lock:";
 
 const addMessage = async (time, message) => {
     verifyMessageParameters(time, message);
+
+    // Add the message to a sorted set, set the score as the message time
     const id = uuidv4();
     time = +time;
     const item = JSON.stringify({ id, message });
@@ -30,6 +32,7 @@ const startMessageChecking = () => {
 }
 
 const checkMessages = async() => {
+    // Fetch the message with the eraliest time, lock it to avoid race conditions and print it
     try {
         const messageItem = await fetchMessage();
         if (messageItem) {
